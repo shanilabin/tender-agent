@@ -4,3 +4,6 @@ __pycache__/
 *.pyc
 .n8n/
 *.log
+local.db
+node_modules/
+n8n/package-lock.json

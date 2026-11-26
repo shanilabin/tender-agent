@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>סוכני מכרזים — ניהול</title>
+<style>
+  :root {
+    --bg: #f6f4ef; --card: #fff; --ink: #1f2a24; --muted: #6b766f; --line: #e4e0d6;
+    --green: #2f7d4f; --green-soft: #e3f1e8; --amber: #b7791f; --amber-soft: #fbf0dc; --red: #b42318; --red-soft: #fbe7e5;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #141815; --card: #1c211d; --ink: #eef2ee; --muted: #9aa69e; --line: #2c332e;
+            --green-soft: #1f3a2a; --amber-soft: #3a2f1a; --red-soft: #3d1f1c; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Segoe UI", "Assistant", "Rubik", system-ui, sans-serif; background: var(--bg); color: var(--ink); }
+  main { max-width: 980px; margin: 0 auto; padding: 40px 16px 64px; }
+  header { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; margin-bottom: 24px; }
+  h1 { font-size: 26px; margin: 0 0 6px; }
+  header p { margin: 0; color: var(--muted); }
+  h2 { font-size: 16px; margin: 0 0 14px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 760px) { .grid { grid-template-columns: 1fr; } }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 22px; margin-bottom: 16px; }
+  .agent { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+  .agent:last-child { border-bottom: 0; }
+  .agent b { display: block; }
+  .agent small { color: var(--muted); }
+  .switch { position: relative; width: 48px; height: 28px; flex: none; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .slider { position: absolute; inset: 0; background: var(--line); border-radius: 999px; cursor: pointer; transition: .2s; }
+  .slider::before { content: ""; position: absolute; width: 22px; height: 22px; top: 3px; right: 3px; background: #fff; border-radius: 50%; transition: .2s; box-shadow: 0 1px 3px rgba(0,0,0,.2); }
+  .switch input:checked + .slider { background: var(--green); }
+  .switch input:checked + .slider::before { transform: translateX(-20px); }
+  .switch input:disabled + .slider { opacity: .45; cursor: not-allowed; }
+  label.f { display: block; font-size: 14px; color: var(--muted); margin: 12px 0 6px; }
+  input.t { width: 100%; font: inherit; padding: 10px 13px; border-radius: 12px; border: 1px solid var(--line); background: transparent; color: var(--ink); direction: ltr; }
+  .row { display: flex; gap: 8px; }
+  button { font: inherit; font-weight: 600; border: 0; border-radius: 12px; padding: 10px 16px; cursor: pointer; background: var(--ink); color: var(--card); white-space: nowrap; }
+  button.ghost { background: transparent; color: var(--ink); border: 1px solid var(--line); }
+  button.ok { background: var(--green-soft); color: var(--green); }
+  button.no { background: var(--red-soft); color: var(--red); }
+  button:disabled { opacity: .5; cursor: wait; }
+  .msg { min-height: 20px; font-size: 14px; margin-top: 8px; }
+  .msg.err { color: var(--red); }
+  .tender { border-bottom: 1px solid var(--line); padding: 14px 0; display: grid; grid-template-columns: 56px 1fr auto; gap: 14px; align-items: start; }
+  .tender:last-child { border-bottom: 0; }
+  .score { font-size: 20px; font-weight: 700; text-align: center; border-radius: 12px; padding: 8px 0; background: var(--bg); font-variant-numeric: tabular-nums; }
+  .score.hi { background: var(--green-soft); color: var(--green); }
+  .tender .meta { color: var(--muted); font-size: 13px; margin-top: 4px; }
+  .tender a { color: inherit; }
+  .chip { display: inline-block; font-size: 12px; padding: 2px 8px; border-radius: 999px; background: var(--bg); color: var(--muted); margin: 4px 0 0 4px; }
+  .chip.approved { background: var(--green-soft); color: var(--green); }
+  .chip.rejected { background: var(--red-soft); color: var(--red); }
+  .actions { display: flex; gap: 6px; }
+  .empty { color: var(--muted); text-align: center; padding: 24px 0; }
+  .run { font-size: 13px; color: var(--muted); padding: 6px 0; border-bottom: 1px solid var(--line); }
+  .run:last-child { border-bottom: 0; }
+  .filters { display: flex; gap: 8px; margin-bottom: 8px; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div>
+      <h1>סוכני מכרזים</h1>
+      <p>מכרזי הזנה והסעדה — סריקה יומית, סינון, ואישור אנושי לפני כל צעד</p>
+    </div>
+    <button id="run" class="ghost">הרצה עכשיו</button>
+  </header>
+
+  <div class="grid">
+    <section class="card">
+      <h2>הסוכנים</h2>
+      <div id="agents"></div>
+    </section>
+    <section class="card">
+      <h2>הגדרות</h2>
+      <label class="f" for="token">סיסמת מנהל (נשמרת רק בלשונית הזו)</label>
+      <input class="t" id="token" type="password" autocomplete="current-password" placeholder="ADMIN_TOKEN">
+      <label class="f" for="recipient">לאן נשלח הסיכום היומי</label>
+      <div class="row">
+        <input class="t" id="recipient" type="email" placeholder="name@example.com">
+        <button id="saveRecipient" class="ghost">שמירה</button>
+      </div>
+      <div id="msg" class="msg" role="status" aria-live="polite"></div>
+    </section>
+  </div>
+
+  <section class="card">
+    <h2 id="tendersTitle">מכרזים</h2>
+    <div class="filters">
+      <button class="ghost" data-filter="relevant">רלוונטיים</button>
+      <button class="ghost" data-filter="all">כל מה שקיבל ציון</button>
+    </div>
+    <div id="tenders"></div>
+  </section>
+
+  <section class="card">
+    <h2>ריצות אחרונות</h2>
+    <div id="runs"></div>
+  </section>
+</main>
+<script>
+  const $ = (id) => document.getElementById(id);
+  const el = (tag, props = {}, ...children) => {
+    const n = Object.assign(document.createElement(tag), props);
+    for (const c of children) n.append(c);
+    return n;
+  };
+  const token = $("token");
+  token.value = sessionStorage.getItem("adminToken") || "";
+  token.addEventListener("input", () => sessionStorage.setItem("adminToken", token.value));
+  let filter = "relevant";
+  let data = null;
+
+  function say(text, err = false) { $("msg").textContent = text; $("msg").className = "msg" + (err ? " err" : ""); }
+
+  async function post(url, body) {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token.value },
+      body: JSON.stringify(body || {}),
+    });
+    const out = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(out.detail || "שגיאה");
+    return out;
+  }
+
+  function renderAgents() {
+    const box = $("agents"); box.replaceChildren();
+    for (const a of data.agents) {
+      const input = el("input", { type: "checkbox", checked: a.enabled, disabled: !a.available });
+      input.setAttribute("aria-label", (a.enabled ? "השהיית " : "הפעלת ") + a.label);
+      input.addEventListener("change", async () => {
+        input.disabled = true;
+        try { await post("/api/agents/" + a.name, { enabled: input.checked }); say(a.label + (input.checked ? " הופעל" : " הושהה")); }
+        catch (e) { input.checked = !input.checked; say(e.message, true); }
+        await load();
+      });
+      const status = a.available ? (a.enabled ? "פעיל" : "מושהה") : "בגרסה 2";
+      box.append(el("div", { className: "agent" },
+        el("div", {}, el("b", { textContent: a.label + " · " + status }), el("small", { textContent: a.description })),
+        el("label", { className: "switch" }, input, el("span", { className: "slider" }))));
+    }
+  }
+
+  function renderTenders() {
+    const box = $("tenders"); box.replaceChildren();
+    const list = data.tenders.filter((t) => filter === "all" || t.relevant);
+    $("tendersTitle").textContent = `מכרזים (${list.length} מתוך ${data.total_tenders} שנאספו)`;
+    if (!list.length) { box.append(el("div", { className: "empty", textContent: "אין עדיין מכרזים להצגה. הפעילו את הסורק והמסנן ולחצו על 'הרצה עכשיו'." })); return; }
+    for (const t of list) {
+      const title = t.url ? el("a", { href: t.url, target: "_blank", rel: "noopener noreferrer", textContent: t.title }) : el("span", { textContent: t.title });
+      const meta = [t.publisher, t.deadline ? "הגשה עד " + t.deadline.split("-").reverse().join("/") : null].filter(Boolean).join(" · ");
+      const chips = el("div");
+      if (t.baseline) chips.append(el("span", { className: "chip", textContent: "נמצא בסריקה הראשונה" }));
+      if (t.decision) chips.append(el("span", { className: "chip " + t.decision, textContent: t.decision === "approved" ? "אושר" : "נדחה" }));
+      for (const r of t.reasons) chips.append(el("span", { className: "chip", textContent: r }));
+      const decide = (d) => async () => {
+        try { await post(`/api/tenders/${t.id}/decision`, { decision: d }); say(d === "approved" ? "סומן לאישור" : "נדחה"); await load(); }
+        catch (e) { say(e.message, true); }
+      };
+      const ok = el("button", { className: "ok", textContent: "לבדוק" }); ok.onclick = decide("approved");
+      const no = el("button", { className: "no", textContent: "לא רלוונטי" }); no.onclick = decide("rejected");
+      box.append(el("div", { className: "tender", id: "tender-" + t.id },
+        el("div", { className: "score" + (t.relevant ? " hi" : ""), textContent: t.score }),
+        el("div", {}, el("b", {}, title), el("div", { className: "meta", textContent: meta }), chips),
+        el("div", { className: "actions" }, ok, no)));
+    }
+  }
+
+  function renderRuns() {
+    const box = $("runs"); box.replaceChildren();
+    if (!data.runs.length) { box.append(el("div", { className: "empty", textContent: "עוד לא היו ריצות." })); return; }
+    for (const r of data.runs) {
+      const s = r.summary || {};
+      const parts = [new Date(r.started_at).toLocaleString("he-IL")];
+      if (s.status === "paused") parts.push("כל הסוכנים מושהים — לא בוצע כלום");
+      for (const [src, v] of Object.entries(s.scanner || {})) parts.push(v.error ? `${v.label}: שגיאה` : v.note ? `${v.label}: ${v.note}` : `${v.label}: ${v.new} חדשים`);
+      if (s.filter) parts.push(`סונן ${s.filter.scored}, רלוונטיים ${s.filter.relevant}`);
+      if (s.to_notify !== undefined) parts.push(`למייל: ${s.to_notify}`);
+      box.append(el("div", { className: "run", textContent: parts.join(" · ") }));
+    }
+  }
+
+  async function load() {
+    data = await (await fetch("/api/state")).json();
+    if (document.activeElement !== $("recipient")) $("recipient").value = data.recipient || "";
+    renderAgents(); renderTenders(); renderRuns();
+  }
+
+  $("saveRecipient").onclick = async () => {
+    try { await post("/api/recipient", { email: $("recipient").value }); say("כתובת המייל נשמרה"); } catch (e) { say(e.message, true); }
+  };
+  $("run").onclick = async () => {
+    $("run").disabled = true; say("מריץ…");
+    try {
+      const r = await post("/api/run");
+      say(r.summary.status === "paused" ? "כל הסוכנים מושהים — לא בוצע כלום" : `הריצה הסתיימה. ${r.count} מכרזים חדשים מחכים למייל.`);
+    } catch (e) { say(e.message, true); }
+    $("run").disabled = false; await load();
+  };
+  document.querySelectorAll("[data-filter]").forEach((b) => b.onclick = () => { filter = b.dataset.filter; renderTenders(); });
+  load();
+</script>
+</body>
+</html>

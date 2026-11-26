@@ -1,0 +1,64 @@
+{
+  "_comment": "Business profile used by the Filter agent. Edit freely; weights are points added to the match score (max 100).",
+  "business": {
+    "food_types": ["ארוחות חמות", "מאפים", "ללא גלוטן", "עוגיות", "רוגלך", "חלות", "לחמניות"],
+    "kashrut": "בד\"ץ העדה החרדית",
+    "kashrut_note": "The highest kashrut level, so it never disqualifies a tender; tenders that ask for mehadrin/badatz get a bonus.",
+    "regions": "national",
+    "max_daily_portions": null,
+    "max_daily_portions_note": "TODO: ask dad. Not used for filtering until known."
+  },
+  "relevance_threshold": 40,
+  "positive_keywords": {
+    "הזנה": 35,
+    "הסעדה": 35,
+    "ארוחות חמות": 35,
+    "ארוחת צהריים": 30,
+    "ארוחות צהריים": 30,
+    "ארוחות": 25,
+    "קייטרינג": 30,
+    "מאפים": 25,
+    "מאפה": 20,
+    "חלות": 25,
+    "לחמניות": 20,
+    "לחם": 15,
+    "עוגיות": 15,
+    "רוגלך": 20,
+    "ללא גלוטן": 20,
+    "כריכים": 20,
+    "מזון": 15,
+    "אוכל": 10
+  },
+  "client_keywords": {
+    "גני ילדים": 15,
+    "גנים": 10,
+    "צהרונים": 20,
+    "צהרון": 20,
+    "בתי ספר": 10,
+    "מוסדות החינוך": 10,
+    "יום לימודים ארוך": 15,
+    "מעונות": 10,
+    "בית חולים": 10,
+    "בתי חולים": 10,
+    "צה\"ל": 10,
+    "עובדים": 5,
+    "מילגם": 20
+  },
+  "kashrut_keywords": {
+    "מהדרין": 10,
+    "בד\"ץ": 10,
+    "כשרות": 5
+  },
+  "negative_keywords": {
+    "בעלי חיים": -60,
+    "ציוד מטבח": -40,
+    "ציוד": -15,
+    "מכונות": -30,
+    "תחזוקה": -30,
+    "שיפוץ": -40,
+    "ניקיון": -30,
+    "מקרקעין": -60,
+    "מגרשים": -60,
+    "יועצים": -40
+  }
+}

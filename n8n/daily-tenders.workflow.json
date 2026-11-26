@@ -1,0 +1,106 @@
+{
+  "name": "Daily tenders",
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Jerusalem"
+  },
+  "nodes": [
+    {
+      "id": "a1f0c6c2-0001-4c1e-9a10-000000000001",
+      "name": "Every morning 08:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [0, 0],
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "cronExpression", "expression": "0 8 * * 0-5" }]
+        }
+      }
+    },
+    {
+      "id": "a1f0c6c2-0002-4c1e-9a10-000000000002",
+      "name": "Run agents",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [240, 0],
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:8000/api/run",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": { "timeout": 300000 }
+      },
+      "credentials": {
+        "httpHeaderAuth": { "id": "", "name": "Tender agents admin token" }
+      }
+    },
+    {
+      "id": "a1f0c6c2-0003-4c1e-9a10-000000000003",
+      "name": "New tenders?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [480, 0],
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [
+            {
+              "id": "c0a1b2c3-0000-4000-8000-000000000001",
+              "leftValue": "={{ $json.count }}",
+              "rightValue": 0,
+              "operator": { "type": "number", "operation": "gt" }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "a1f0c6c2-0004-4c1e-9a10-000000000004",
+      "name": "Send email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [720, -100],
+      "parameters": {
+        "fromEmail": "={{ $json.email.from }}",
+        "toEmail": "={{ $json.email.to }}",
+        "subject": "={{ $json.email.subject }}",
+        "emailFormat": "html",
+        "html": "={{ $json.email.html }}",
+        "options": {}
+      },
+      "credentials": {
+        "smtp": { "id": "", "name": "Gmail SMTP" }
+      }
+    },
+    {
+      "id": "a1f0c6c2-0005-4c1e-9a10-000000000005",
+      "name": "Mark as sent",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [960, -100],
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:8000/api/mark-notified",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ ids: $('Run agents').item.json.tender_ids }) }}",
+        "options": {}
+      },
+      "credentials": {
+        "httpHeaderAuth": { "id": "", "name": "Tender agents admin token" }
+      }
+    }
+  ],
+  "connections": {
+    "Every morning 08:00": { "main": [[{ "node": "Run agents", "type": "main", "index": 0 }]] },
+    "Run agents": { "main": [[{ "node": "New tenders?", "type": "main", "index": 0 }]] },
+    "New tenders?": { "main": [[{ "node": "Send email", "type": "main", "index": 0 }], []] },
+    "Send email": { "main": [[{ "node": "Mark as sent", "type": "main", "index": 0 }]] }
+  },
+  "pinData": {}
+}

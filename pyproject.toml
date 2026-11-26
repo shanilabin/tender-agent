@@ -1,0 +1,19 @@
+[project]
+name = "tender-agents"
+version = "0.1.0"
+description = "Add your description here"
+requires-python = ">=3.12"
+dependencies = [
+    "beautifulsoup4>=4.15.0",
+    "fastapi>=0.165.0",
+    "httpx>=0.29.0",
+    "psycopg[binary]>=3.3.9",
+    "python-dotenv>=1.2.4",
+    "sqlalchemy>=2.1.9",
+    "uvicorn[standard]>=0.54.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.2.0",
+]
